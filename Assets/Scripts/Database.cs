@@ -14,8 +14,11 @@ public class FirebaseManager : MonoBehaviour
 
     [SerializeField] private TMP_InputField nameInputField;
     [SerializeField] private TMP_InputField ageInputField;
+    [SerializeField] private TMP_Dropdown statusDrop;
+    [SerializeField] private TMP_Dropdown roleDrop;
     [SerializeField] private Button submitButton;
     [SerializeField] private PushNotificationHandler pushNotificationHandler;
+    
     
     void Start()
     {
@@ -33,6 +36,8 @@ public class FirebaseManager : MonoBehaviour
     {
         string name = nameInputField.text;
         string ageText = ageInputField.text;
+        string status = statusDrop.options[statusDrop.value].text;
+        string role = roleDrop.options[roleDrop.value].text;
         string deviceToken = pushNotificationHandler.DeviceToken;
         
         if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(ageText))
@@ -46,17 +51,40 @@ public class FirebaseManager : MonoBehaviour
             Debug.LogError("Invalid age input!");
             return;
         }
+        if(role=="Student"){
+            AddStudent(name, age, deviceToken);
+        }
+        else{
+            AddTeacher(name, age,status, deviceToken);
+        }
 
-        AddUser(name, age, deviceToken);
     }
 
-    public void AddUser(string name, int age, string deviceToken)
+    public void AddTeacher(string name, int age, string status ,string deviceToken)
     {
         string deviceId = SystemInfo.deviceUniqueIdentifier;
-        UserData user = new UserData(name, age, deviceToken);
+        Teacher user = new Teacher(name, age,status, deviceToken);
         string json = JsonUtility.ToJson(user);
 
-        databaseReference.Child("users").Child(deviceId).SetRawJsonValueAsync(json).ContinueWithOnMainThread(task =>
+        databaseReference.Child("Teacher").Child(deviceId).SetRawJsonValueAsync(json).ContinueWithOnMainThread(task =>
+        {
+            if (task.IsCompleted)
+            {
+                Debug.Log("User data successfully added to Firebase.");
+            }
+            else
+            {
+                Debug.LogError("Failed to add user data: " + task.Exception);
+            }
+        });
+    }
+    public void AddStudent(string name, int age,string deviceToken)
+    {
+        string deviceId = SystemInfo.deviceUniqueIdentifier;
+        Student user = new Student(name, age, deviceToken);
+        string json = JsonUtility.ToJson(user);
+
+        databaseReference.Child("Student").Child(deviceId).SetRawJsonValueAsync(json).ContinueWithOnMainThread(task =>
         {
             if (task.IsCompleted)
             {
@@ -71,13 +99,30 @@ public class FirebaseManager : MonoBehaviour
 }
 
 [Serializable]
-public class UserData
+public class Teacher
+{
+    public string name;
+    public string status;
+    public int age;
+    public string deviceToken;
+    
+    public Teacher(string name, int age,string status ,string deviceToken)
+    {
+        this.name = name;
+        this.age = age;
+        this.status = status;
+        this.deviceToken = deviceToken;
+    }
+}
+
+[Serializable]
+public class Student
 {
     public string name;
     public int age;
     public string deviceToken;
     
-    public UserData(string name, int age, string deviceToken)
+    public Student(string name, int age ,string deviceToken)
     {
         this.name = name;
         this.age = age;
