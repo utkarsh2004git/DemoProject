@@ -15,7 +15,8 @@ public class FirebaseManager : MonoBehaviour
     [SerializeField] private TMP_InputField nameInputField;
     [SerializeField] private TMP_InputField ageInputField;
     [SerializeField] private Button submitButton;
-
+    [SerializeField] private PushNotificationHandler pushNotificationHandler;
+    
     void Start()
     {
         FirebaseApp.CheckAndFixDependenciesAsync().ContinueWithOnMainThread(task =>
@@ -32,7 +33,8 @@ public class FirebaseManager : MonoBehaviour
     {
         string name = nameInputField.text;
         string ageText = ageInputField.text;
-
+        string deviceToken = pushNotificationHandler.DeviceToken;
+        
         if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(ageText))
         {
             Debug.LogError("Name or age is empty!");
@@ -45,13 +47,13 @@ public class FirebaseManager : MonoBehaviour
             return;
         }
 
-        AddUser(name, age);
+        AddUser(name, age, deviceToken);
     }
 
-    public void AddUser(string name, int age)
+    public void AddUser(string name, int age, string deviceToken)
     {
         string deviceId = SystemInfo.deviceUniqueIdentifier;
-        UserData user = new UserData(name, age);
+        UserData user = new UserData(name, age, deviceToken);
         string json = JsonUtility.ToJson(user);
 
         databaseReference.Child("users").Child(deviceId).SetRawJsonValueAsync(json).ContinueWithOnMainThread(task =>
@@ -73,10 +75,12 @@ public class UserData
 {
     public string name;
     public int age;
-
-    public UserData(string name, int age)
+    public string deviceToken;
+    
+    public UserData(string name, int age, string deviceToken)
     {
         this.name = name;
         this.age = age;
+        this.deviceToken = deviceToken;
     }
 }
