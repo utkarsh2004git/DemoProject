@@ -8,12 +8,12 @@ using Firebase.Extensions;
 using System;
 using UnityEngine.UI;
 
-public class FirebaseManager : MonoBehaviour
+public class Database : MonoBehaviour
 {
     private DatabaseReference databaseReference;
 
+    [SerializeField] private TMP_InputField emailInputField;
     [SerializeField] private TMP_InputField nameInputField;
-    [SerializeField] private TMP_InputField ageInputField;
     [SerializeField] private TMP_Dropdown statusDrop;
     [SerializeField] private TMP_Dropdown roleDrop;
     [SerializeField] private Button submitButton;
@@ -34,36 +34,32 @@ public class FirebaseManager : MonoBehaviour
 
     private void OnSubmit()
     {
-        string name = nameInputField.text;
-        string ageText = ageInputField.text;
+        string email = emailInputField.text;
+        string nameText = nameInputField.text;
         string status = statusDrop.options[statusDrop.value].text;
         string role = roleDrop.options[roleDrop.value].text;
         string deviceToken = pushNotificationHandler.DeviceToken;
         
-        if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(ageText))
+        if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(nameText))
         {
-            Debug.LogError("Name or age is empty!");
+            Debug.LogError("email or name is empty!");
             return;
         }
 
-        if (!int.TryParse(ageText, out int age))
-        {
-            Debug.LogError("Invalid age input!");
-            return;
-        }
+        
         if(role=="Student"){
-            AddStudent(name, age, deviceToken);
+            AddStudent(email, nameText, deviceToken);
         }
         else{
-            AddTeacher(name, age,status, deviceToken);
+            AddTeacher(email, nameText,status, deviceToken);
         }
 
     }
 
-    public void AddTeacher(string name, int age, string status ,string deviceToken)
+    public void AddTeacher(string email, string name, string status ,string deviceToken)
     {
         string deviceId = SystemInfo.deviceUniqueIdentifier;
-        Teacher user = new Teacher(name, age,status, deviceToken);
+        Teacher user = new Teacher(email, name,status, deviceToken);
         string json = JsonUtility.ToJson(user);
 
         databaseReference.Child("Teacher").Child(deviceId).SetRawJsonValueAsync(json).ContinueWithOnMainThread(task =>
@@ -78,10 +74,10 @@ public class FirebaseManager : MonoBehaviour
             }
         });
     }
-    public void AddStudent(string name, int age,string deviceToken)
+    public void AddStudent(string email, string name,string deviceToken)
     {
         string deviceId = SystemInfo.deviceUniqueIdentifier;
-        Student user = new Student(name, age, deviceToken);
+        Student user = new Student(email, name, deviceToken);
         string json = JsonUtility.ToJson(user);
 
         databaseReference.Child("Student").Child(deviceId).SetRawJsonValueAsync(json).ContinueWithOnMainThread(task =>
@@ -101,15 +97,15 @@ public class FirebaseManager : MonoBehaviour
 [Serializable]
 public class Teacher
 {
-    public string name;
+    public string email;
     public string status;
-    public int age;
+    public string name;
     public string deviceToken;
     
-    public Teacher(string name, int age,string status ,string deviceToken)
+    public Teacher(string email, string name,string status ,string deviceToken)
     {
+        this.email = email;
         this.name = name;
-        this.age = age;
         this.status = status;
         this.deviceToken = deviceToken;
     }
@@ -118,14 +114,14 @@ public class Teacher
 [Serializable]
 public class Student
 {
+    public string email;
     public string name;
-    public int age;
     public string deviceToken;
     
-    public Student(string name, int age ,string deviceToken)
+    public Student(string email, string name ,string deviceToken)
     {
+        this.email = email;
         this.name = name;
-        this.age = age;
         this.deviceToken = deviceToken;
     }
 }
